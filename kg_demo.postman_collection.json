@@ -1,0 +1,59 @@
+{
+  "info": {
+    "name": "KG Demo",
+    "_postman_id": "b1e1e1e1-1111-2222-3333-444455556666",
+    "description": "Knowledge Graph Demo API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Add Test Run",
+      "request": {
+        "method": "POST",
+        "header": [
+          { "key": "Content-Type", "value": "application/json" }
+        ],
+        "body": {
+          "mode": "raw",
+          "raw": "{\n  \"test_id\": \"test1\",\n  \"element_id\": \"elem42\",\n  \"locator\": \"//button[@id='submit']\",\n  \"result\": \"fail\",\n  \"healing\": \"xpath_update\",\n  \"patch\": \"patch123\",\n  \"failure_reason\": \"Element not found\",\n  \"prompt_id\": \"prompt001\"\n}"
+        },
+        "url": { "raw": "http://127.0.0.1:5000/add_test_run", "protocol": "http", "host": ["127.0.0.1"], "port": "5000", "path": ["add_test_run"] }
+      }
+    },
+    {
+      "name": "Suggest Locator",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "http://127.0.0.1:5000/suggest_locator/elem42", "protocol": "http", "host": ["127.0.0.1"], "port": "5000", "path": ["suggest_locator", "elem42"] }
+      }
+    },
+    {
+      "name": "Healing Strategies",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "http://127.0.0.1:5000/healing_strategies/elem42", "protocol": "http", "host": ["127.0.0.1"], "port": "5000", "path": ["healing_strategies", "elem42"] }
+      }
+    },
+    {
+      "name": "Locator History",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "http://127.0.0.1:5000/get_locator_history/elem42", "protocol": "http", "host": ["127.0.0.1"], "port": "5000", "path": ["get_locator_history", "elem42"] }
+      }
+    },
+    {
+      "name": "Self-Healing Actions",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "http://127.0.0.1:5000/get_healings/elem42", "protocol": "http", "host": ["127.0.0.1"], "port": "5000", "path": ["get_healings", "elem42"] }
+      }
+    },
+    {
+      "name": "Element Analytics",
+      "request": {
+        "method": "GET",
+        "url": { "raw": "http://127.0.0.1:5000/analytics/element/elem42", "protocol": "http", "host": ["127.0.0.1"], "port": "5000", "path": ["analytics", "element", "elem42"] }
+      }
+    }
+  ]
+}

@@ -1,141 +1,131 @@
-# Solution Approach: Multi-Agent AI Self-Healing System
+%% graph TB
+%%     subgraph "Client Side"
+%%         WE[Web Extension for<br/>Interaction Capture<br/>• Real-time recording<br/>• DOM context capture<br/>• Metadata collection]
+%%         BR[Browser<br/>Chrome/Firefox]
+%%         WA[Web Application<br/>Under Test]
+        
+%%         BR --> WE
+%%         WE --> WA
+%%     end
+    
+%%     subgraph "Backend Server - Flask API Layer"
+%%         API[Flask Backend API<br/>• Coordinates subsystems<br/>• Handles requests<br/>• Manages workflows]
+        
+%%         subgraph "Code Generation"
+%%             LLM[LLM-Based Code Generation Engine<br/>• Dynamic prompt library<br/>• Language/framework selection<br/>• Post-generation validation]
+%%             XPATH[XPath Suggestion and<br/>Ranking Endpoint<br/>• LLM-powered analysis<br/>• Historical success patterns<br/>• Confidence scoring]
+%%         end
+        
+%%         subgraph "Self-Healing Engine"
+%%             NEURAL[Neural Element Matching<br/>• Weighted attribute embeddings<br/>• Similarity scoring<br/>• Top-1 match identification]
+%%             DOM[DOM Comparison<br/>• Baseline vs current<br/>• Change detection<br/>• Element mapping]
+%%         end
+        
+%%         subgraph "Test Execution"
+%%             CDP[Chrome DevTools Protocol Driver<br/>• Drop-in replacement<br/>• Legacy integration<br/>• Event capture]
+%%             EXEC[Test Execution Engine<br/>• Screenshot capture<br/>• Log collection<br/>• Failure detection]
+%%         end
+        
+%%         API --> LLM
+%%         API --> XPATH
+%%         API --> NEURAL
+%%         API --> DOM
+%%         API --> CDP
+%%         API --> EXEC
+%%     end
+    
+%%     subgraph "External Storage & Integration"
+%%         CLOUD[Cloud Object Storage<br/>• Screenshot management<br/>• Visual artifacts<br/>• Metadata linking]
+        
+%%         subgraph "Version Control"
+%%             GIT[Git Repository<br/>• Code patches<br/>• Branch management<br/>• Pull requests]
+%%             PR[Pull Request System<br/>• Code review<br/>• Approval workflow<br/>• Merge management]
+%%         end
+        
+%%         subgraph "External Configurations"
+%%             PROP[Property Files<br/>• External locators<br/>• Configuration data<br/>• Framework settings]
+%%             LEGACY[Legacy Test Suites<br/>• Existing automation<br/>• Retrofit integration<br/>• Minimal modifications]
+%%         end
+%%     end
+    
+%%     subgraph "User Interface & Database"
+%%         UI[Custom User Interface<br/>• Code generation UI<br/>• Healing visualization<br/>• XPath suggestion tools<br/>• Visual diff inspection]
+        
+%%         DB[Backend Database<br/>• DOM snapshots<br/>• User preferences<br/>• Test history<br/>• Prompt statistics<br/>• Healing metadata]
+        
+%%         UI --> DB
+%%     end
+    
+%%     subgraph "Data Flow"
+%%         JSON[Interaction Logs<br/>JSON Format]
+%%         SNAP[DOM Snapshots<br/>Baseline & Current]
+%%         CODE[Generated Test Code<br/>Multiple Languages]
+%%         PATCH[Code Patches<br/>Selective updates]
+%%     end
+    
+%%     %% Client to Backend Flow
+%%     WE -->|Upload Logs| API
+%%     WE -->|Interaction Data| JSON
+    
+%%     %% Code Generation Flow
+%%     JSON --> LLM
+%%     LLM --> CODE
+%%     XPATH --> CODE
+    
+%%     %% Self-Healing Flow
+%%     CDP -->|DOM Data| SNAP
+%%     SNAP --> DOM
+%%     DOM --> NEURAL
+%%     NEURAL --> PATCH
+    
+%%     %% Storage Connections
+%%     EXEC --> CLOUD
+%%     API --> CLOUD
+%%     PATCH --> GIT
+%%     GIT --> PR
+    
+%%     %% External Integration
+%%     NEURAL --> PROP
+%%     CDP --> LEGACY
+    
+%%     %% UI Connections
+%%     API --> UI
+%%     CODE --> UI
+%%     PATCH --> UI
+%%     CLOUD --> UI
+    
+%%     %% Database Connections
+%%     SNAP --> DB
+%%     CODE --> DB
+%%     PATCH --> DB
 
-## 1. Repository-to-Knowledge-Graph Conversion and GraphRAG
-
-### 1.1 Repository/File to Knowledge Graph
-When a repository or file (Business Requirements Document) is provided, it is parsed and analyzed to extract its structural and semantic components. The process involves:
-
-- **Parsing and Static Analysis** (should try different types and then decide the best suitable one): Use language-specific parsers (e.g., Python's `ast`, JavaScript's `acorn`, Java's `javaparser`) to build Abstract Syntax Trees (ASTs) and extract entities such as functions, classes, modules, and their relationships (calls, imports, inheritance, etc.).
-- **Documentation and Test Extraction** (it may be removed, as it will increase the computation): Use tools like `docutils` or custom regex/markdown parsers to extract logical sections, test coverage, and links to code entities from documentation and test files.
-- **Chunking**: The codebase is divided into meaningful chunks:
-  - **AST-based Chunking**: Code is chunked at the function, class, or module level, preserving logical boundaries and context. This is implemented by traversing the AST and extracting code blocks as separate units.
-  - **Sliding Window with Overlap**: For very large files, a sliding window (e.g., 100-200 lines with 20-40 line overlap) is used to maintain context across chunk boundaries. This is implemented by iterating over the file with a window and overlap stride.
-  - **Hybrid Chunking**: For mixed content (code + docs), combine AST-based chunking for code and section-based chunking for documentation (e.g., using markdown headers as boundaries).
-- **Graph Construction** (Can be Improved): Each chunk becomes a node in the knowledge graph (using a property graph database like Neo4j). Edges are created to represent relationships such as function calls, imports, test coverage, documentation links, and dependencies. The graph is continuously updated as the codebase evolves.
-
-#### How to Improve Chunking (Improvement can be done)
-- Use **semantic similarity** (e.g., using embeddings) to merge or split chunks that are too small or too large.
-- Dynamically adjust chunk size based on code complexity (e.g., cyclomatic complexity).
-- For multi-language repos, use language-agnostic chunking frameworks (e.g., tree-sitter).
-
-### 1.2 Establishing GraphRAG (Graph Retrieval-Augmented Generation) (Important Part)
-- **Indexing and Embedding** : Each chunk/node is embedded using language models (e.g., OpenAI, HuggingFace, or open-source models like `Instructor-XL`) to enable semantic search and retrieval. Embeddings are stored in a vector database (e.g., ChromaDB, Pinecone, or FAISS).
-- **Graph-Driven Retrieval**: When the LLM is prompted (for root cause analysis, fix generation, etc.), it queries the knowledge graph to retrieve the most relevant chunks and their direct/indirect relationships (dependencies, callers, callees, related tests). Retrieval can use a combination of:
-  - **Vector similarity search**: Retrieve top-k semantically similar chunks.
-  - **Graph traversal**: Expand the context by traversing edges (e.g., up to N hops for dependencies).
-  - **Hybrid scoring**: Combine semantic similarity and graph proximity (e.g., `score = alpha * sim + beta * (1/distance)`).
-- **Context Assembly**: The retrieved subgraph (relevant nodes and their context) is assembled and provided as input context to the LLM, ensuring that the model has both the semantic and structural information needed for deep reasoning.
-
-#### Example Prompt for LLM
-```
-You are an expert software agent. Given the following code context and test failure, identify the root cause and propose a fix.
-
-Code Context:
-<insert retrieved code chunks here>
-
-Test Failure:
-<insert test log/error message here>
-
-Knowledge Graph Relationships:
-<insert relevant graph edges/metadata here>
-```
-
-#### How to Improve GraphRAG (hybrid approach will also be better)
-- Use **dynamic prompt construction**: Only include the most relevant nodes/edges to avoid context overflow.
-- Use **attention mechanisms** or **graph neural networks** to better aggregate information from the graph.
-- Use **feedback loops**: If the LLM's output is not satisfactory, expand the graph context and retry.
-
-### 1.3 Benefits of This Approach
-- **Scalability**: Chunking and graph-based retrieval allow the system to handle very large codebases efficiently, retrieving only the most relevant context for each query.
-- **Explainability**: The knowledge graph provides a transparent, navigable structure that explains why certain code or documentation was retrieved and used by the LLM.
-- **Precision**: By leveraging both semantic similarity and explicit code relationships, the system delivers highly targeted and context-rich information to the LLM, improving the quality of analysis and generated fixes.
-- **Continuous Adaptation**: As the codebase changes, the knowledge graph and embeddings are updated, ensuring that retrieval and reasoning always reflect the latest state.
-
----
-
-## 2. Multi-Agent Workflow and Implementation
-
-### 2.1 Agent Roles and Methods
-
-| Agent                  | Method/Frameworks Used         | How It Works / Details                                                                 |
-|------------------------|-------------------------------|----------------------------------------------------------------------------------------|
-| Finder Agent           | LLM (OpenAI, Transformers)    | Parses logs using prompt-based extraction to identify failed tests and error messages.  |
-| Detector Agent         | Neo4j, Cypher, LLM            | Maps failed tests to code entities using graph queries and LLM for ambiguous cases.     |
-| Investigator Agent     | LLM, diff tools, Neo4j        | Analyzes root cause using code/DOM diffs, graph context, and historical failures.       |
-| Solution Provider      | LLM + GraphRAG, ChromaDB      | Uses GraphRAG to retrieve context and propose fixes; prompt includes code, graph, logs. |
-| Solution Applier       | GitHub API, Neo4j             | Applies fixes, updates codebase and knowledge graph, links fix to failure event.        |
-| Solution Tester        | Pytest/Selenium/Playwright    | Runs tests to validate fixes, reports results, updates graph.                          |
-| Chat Manager           | State machine, ChromaDB       | Orchestrates workflow, manages state, handles retries and backpropagation.              |
-
-#### Example: Detector Agent Cypher Query
-```
-MATCH (t:TestCase {name: $testName})-[:TESTS]->(c:CodeEntity)
-RETURN c
-```
-
-#### Example: Solution Provider Agent Prompt
-```
-You are an expert code fixer. Given the following code context and failure, propose a minimal, safe fix.
-
-Code Context:
-<retrieved code chunks>
-
-Failure:
-<test log>
-
-Graph Relationships:
-<edges/metadata>
-```
-
-### 2.2 Data & Control Flow
-
-```mermaid
-sequenceDiagram
-    participant User/CI
-    participant Finder
-    participant Detector
-    participant Investigator
-    participant SolutionProvider
-    participant Applier
-    participant Tester
-    participant ChatManager
-    participant KG as KnowledgeGraph
-
-    User/CI->>Finder: Provide test logs
-    Finder->>Detector: Failed tests
-    Detector->>KG: Query for failure points
-    Detector->>Investigator: Failure points
-    Investigator->>KG: Query for context
-    Investigator->>SolutionProvider: Root cause
-    SolutionProvider->>KG: Retrieve relevant code/docs
-    SolutionProvider->>Applier: Proposed fix
-    Applier->>KG: Update graph with fix
-    Applier->>Tester: Patched code
-    Tester->>ChatManager: Test results
-    ChatManager->>Finder: Orchestrate/loop if needed
-```
-
----
-
-## 3. Frameworks and Tools
-
-- **Parsing/Chunking**: Python `ast`, JavaScript `acorn`, Java `javaparser`, `tree-sitter` (multi-language)
-- **Knowledge Graph**: Neo4j (Cypher queries, property graph model)
-- **Vector Database**: ChromaDB, Pinecone, FAISS
-- **LLMs**: OpenAI GPT, HuggingFace Transformers, Instructor-XL
-- **Test Execution**: Pytest, Selenium, Playwright
-- **Orchestration/State**: ChromaDB, custom state machine
-- **APIs/Automation**: GitHub API, REST/GraphQL
-
----
-
-## 4. How Each Method Helps
-
-- **AST-based Chunking**: Ensures each node is a logical, self-contained unit, improving retrieval and LLM context.
-- **Sliding Window**: Preserves context for LLMs in large or procedural files.
-- **Graph Construction**: Enables fast, explainable traversal for dependency and impact analysis.
-- **GraphRAG**: Combines semantic and structural retrieval for high-quality LLM input.
-- **Prompt Engineering**: Carefully designed prompts ensure the LLM receives all necessary context and instructions for each task.
-- **Hybrid Retrieval**: Merges semantic similarity and graph proximity for optimal context selection.
-- **Continuous Graph/Embedding Update**: Keeps the system in sync with the latest codebase state.
-
+graph TD
+    A[User Interacts with Web App] --> B[Web Extension Captures Actions]
+    B --> C[Upload to Backend API]
+    
+    C --> D{Request Type}
+    D -->|Generate Code| E[LLM Code Generation]
+    D -->|Execute Tests| F[CDP Test Driver]
+    D -->|Get XPath| G[XPath Ranking Engine]
+    
+    E --> H[Generated Test Code]
+    F --> I{Test Result}
+    G --> J[Ranked XPath List]
+    
+    I -->|Success| K[Store DOM Baseline]
+    I -->|Failure| L[Self-Healing Engine]
+    
+    L --> M[Neural Element Matching]
+    M --> N{Match Found?}
+    N -->|Yes| O[Generate Code Patch]
+    N -->|No| P[Remove Element References]
+    
+    O --> Q[Create Pull Request]
+    P --> Q
+    Q --> R[Visual Review Interface]
+    R --> S[User Reviews & Merges]
+    
+    H --> T[User Interface]
+    J --> T
+    K --> T
+    S --> T
